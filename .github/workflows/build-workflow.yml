@@ -1,0 +1,40 @@
+name: build and test
+run-name: build and test
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        perl-version:
+          - '5.38'
+          - '5.36'
+          - '5.34'
+          - '5.32'
+          - '5.30'
+          
+    container:
+      image: perldocker/perl-tester:${{ matrix.perl-version }}
+
+    steps:
+      - uses: actions/checkout@main
+      - run: perl -V
+      - run: |
+          cpm install -g --no-test Dist::Zilla Dist::Zilla::App::Command::cover ExtUtils::MakeMaker
+        name: Install Dzil
+      - name: Install dzil author dependencies
+        run: |
+            cpm install --no-test -g \
+            -w 2 \
+            --mirror=http://cpan.cpantesters.org/ $(dzil authordeps --missing)
+      - name: Install dist deps
+        run: |
+          cpanm -n --installdeps .
+          dzil listdeps --author --missing --cpanm-versions | xargs cpanm -n
+
+      - run: dzil smoke --release --author && dzil cover -test -report codecov && dzil xtest

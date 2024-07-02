@@ -1,0 +1,7 @@
+{{$NEXT}}
+  - Initial release
+  - load features
+  - get feature value
+  - is_on
+  - is_off
+
